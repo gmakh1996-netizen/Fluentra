@@ -7,7 +7,11 @@ import { PLANS, TIER_ORDER } from "@/config/plans";
 import { cn } from "@/lib/utils";
 
 const ICONS = { free: Zap, pro: Star, ultimate: Sparkles };
-const INTERVAL_DISCOUNT = 0.2; // 20% off yearly
+const DISPLAY_PRICES: Record<string, { monthly: number; yearly: number }> = {
+  free:     { monthly: 0,     yearly: 0 },
+  pro:      { monthly: 7.99,  yearly: 3.99 },  // $47.99/yr billed annually, save 50%
+  ultimate: { monthly: 12.99, yearly: 6.50 },  // $77.99/yr billed annually, save 50%
+};
 
 export default function PricingPage() {
   const router = useRouter();
@@ -59,7 +63,7 @@ export default function PricingPage() {
               {i}
               {i === "yearly" && (
                 <span className="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                  -20%
+                  save 50%
                 </span>
               )}
             </button>
@@ -76,11 +80,8 @@ export default function PricingPage() {
           const isPro = tier === "pro";
           const isUltimate = tier === "ultimate";
 
-          // Placeholder prices until real price IDs configured
-          const monthlyDisplay = tier === "free" ? 0 : tier === "pro" ? 12 : 24;
-          const display = interval === "yearly"
-            ? Math.round(monthlyDisplay * (1 - INTERVAL_DISCOUNT))
-            : monthlyDisplay;
+          const prices = DISPLAY_PRICES[tier] ?? { monthly: 0, yearly: 0 };
+          const display = interval === "yearly" ? prices.yearly : prices.monthly;
 
           return (
             <div
@@ -121,7 +122,9 @@ export default function PricingPage() {
                   ${display}
                 </span>
                 <span className="mb-1 text-sm text-muted-foreground">
-                  {tier === "free" ? "forever" : `/mo${interval === "yearly" ? ", billed yearly" : ""}`}
+                  {tier === "free" ? "forever" : interval === "yearly"
+                    ? <>/mo <span className="text-xs">billed ${tier === "pro" ? "47.99" : "77.99"}/yr</span></>
+                    : "/mo"}
                 </span>
               </div>
 
