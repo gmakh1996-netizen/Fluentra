@@ -19,8 +19,6 @@ const LEVEL_DESCRIPTIONS: Record<CefrLevel, string> = {
   C2: "Mastery",
 };
 
-const NATIVE_LANGUAGES = LANGUAGE_OPTIONS.slice(0, 8);
-
 export default function OnboardingPage() {
   const router = useRouter();
   const session = useLearningSession();
@@ -78,7 +76,7 @@ export default function OnboardingPage() {
                   : "bg-card text-muted-foreground hover:text-foreground",
               )}
             >
-              <span className="text-xl">{l.flag}</span>
+              <span className="text-xs font-bold tracking-wide opacity-60">{l.code.toUpperCase()}</span>
               {l.name}
             </button>
           ))}
@@ -89,7 +87,7 @@ export default function OnboardingPage() {
       <div className="space-y-3">
         <h2 className="font-semibold">What&apos;s your native language?</h2>
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-          {NATIVE_LANGUAGES.map((l) => (
+          {LANGUAGE_OPTIONS.map((l) => (
             <button
               key={l.code}
               type="button"
@@ -101,7 +99,7 @@ export default function OnboardingPage() {
                   : "bg-card text-muted-foreground hover:text-foreground",
               )}
             >
-              <span className="text-xl">{l.flag}</span>
+              <span className="text-xs font-bold tracking-wide opacity-60">{l.code.toUpperCase()}</span>
               {l.name}
             </button>
           ))}
