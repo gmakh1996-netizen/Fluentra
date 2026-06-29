@@ -1,26 +1,24 @@
+import type { Metadata } from "next";
 import { requireAdminPage } from "@/lib/auth";
-import { Logo } from "@/components/marketing/logo";
+import { AdminSidebar, MobileAdminSidebar } from "@/components/admin/admin-sidebar";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Badge } from "@/components/ui/badge";
 import { UserNav } from "@/components/auth/user-nav";
 
-/**
- * Admin-only shell. `requireAdminPage` enforces the `admin` role server-side
- * (redirecting non-admins to the dashboard) — the role is checked against the
- * DB via RLS, not inferred from the client. Full admin tooling ships in the
- * admin phase.
- */
+export const metadata: Metadata = {
+  title: { template: "%s — Fluentra Admin", default: "Admin" },
+};
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, profile } = await requireAdminPage();
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-40 border-b bg-card/80 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <Logo />
-            <Badge variant="gradient">Admin</Badge>
-          </div>
+    <div className="flex min-h-dvh">
+      <AdminSidebar />
+      <div className="flex flex-1 flex-col lg:pl-60">
+        {/* Mobile header */}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-card/80 backdrop-blur px-4 lg:hidden">
+          <MobileAdminSidebar />
+          <span className="flex-1 text-sm font-semibold">Admin</span>
           <div className="flex items-center gap-2">
             <ModeToggle />
             <UserNav
@@ -30,9 +28,26 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               role={profile.role}
             />
           </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+        </header>
+
+        {/* Desktop header */}
+        <header className="sticky top-0 z-30 hidden h-14 items-center justify-between border-b bg-card/80 backdrop-blur px-6 lg:flex">
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Admin Panel
+          </span>
+          <div className="flex items-center gap-2">
+            <ModeToggle />
+            <UserNav
+              email={user.email ?? ""}
+              displayName={profile.display_name}
+              avatarUrl={profile.avatar_url}
+              role={profile.role}
+            />
+          </div>
+        </header>
+
+        <main className="flex-1 p-4 sm:p-6">{children}</main>
+      </div>
     </div>
   );
 }
