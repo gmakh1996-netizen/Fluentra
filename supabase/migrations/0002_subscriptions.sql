@@ -9,7 +9,7 @@ create table subscriptions (
   stripe_customer_id     text        not null unique,
   stripe_subscription_id text        unique,
   stripe_price_id        text,
-  tier                   subscription_tier not null default 'free',
+  tier                   text        not null default 'free' check (tier in ('free', 'pro', 'ultimate')),
   status                 text        not null default 'inactive',
   -- 'active' | 'trialing' | 'past_due' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'paused' | 'unpaid'
   trial_end              timestamptz,
