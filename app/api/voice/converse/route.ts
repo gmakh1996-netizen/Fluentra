@@ -50,10 +50,10 @@ export async function POST(req: Request) {
     try {
       const admin = createAdminClient();
       const last = messages[messages.length - 1];
-      await admin.from("ai_messages").insert([
+      await admin.from("ai_messages" as never).insert([
         { role: "user", content: last?.content ?? "", user_id: user.id },
         { role: "assistant", content: text, user_id: user.id },
-      ]);
+      ] as never);
     } catch {
       /* ignore until table exists */
     }

@@ -45,7 +45,7 @@ export async function consumeUsage(userId: string, meter: Meter, amount = 1): Pr
 
   const { error: updateError } = await admin
     .from("usage_limits")
-    .update({ [usedCol]: used + amount })
+    .update({ [usedCol]: used + amount } as never)
     .eq("user_id", userId)
     .eq("period_date", period);
 

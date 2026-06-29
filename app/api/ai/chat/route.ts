@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         // Persistence target tables land in migration 0003 (ai_conversations,
         // ai_messages). Insert is best-effort and must not break streaming.
         try {
-          await admin.from("ai_messages").insert([
+          await admin.from("ai_messages" as never).insert([
             { role: "user", content: last?.content ?? "", user_id: user.id },
             {
               role: "assistant",
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
               tokens_in: usage?.promptTokens ?? null,
               tokens_out: usage?.completionTokens ?? null,
             },
-          ]);
+          ] as never);
         } catch {
           /* table arrives in Phase 3; ignore until then */
         }

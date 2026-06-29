@@ -45,7 +45,7 @@ export async function POST(req: Request) {
     // Save history (best-effort; never block returning the score to the user).
     try {
       const supabase = await createClient();
-      await supabase.from("pronunciation_sessions").insert({
+      await supabase.from("pronunciation_sessions" as never).insert({
         user_id: user.id,
         phrase: referenceText,
         accuracy_score: score.accuracy,
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         phoneme_scores: score.phonemes,
         tips: score.tips,
         graded: score.graded,
-      });
+      } as never);
     } catch {
       /* history table is non-critical for the response */
     }
