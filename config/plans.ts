@@ -15,6 +15,8 @@ export interface Plan {
   features: string[];
   /** Stripe price IDs by interval; null for the free plan. */
   priceIds: { monthly: string | null; yearly: string | null };
+  /** Free trial days for new subscriptions; omit or 0 for no trial. */
+  trialDays?: number;
 }
 
 /**
@@ -49,6 +51,7 @@ export const PLANS: Record<Tier, Plan> = {
       monthly: process.env.STRIPE_PRICE_PRO_MONTHLY ?? null,
       yearly: process.env.STRIPE_PRICE_PRO_YEARLY ?? null,
     },
+    trialDays: 7,
   },
   ultimate: {
     tier: "ultimate",
@@ -66,6 +69,7 @@ export const PLANS: Record<Tier, Plan> = {
       monthly: process.env.STRIPE_PRICE_ULTIMATE_MONTHLY ?? null,
       yearly: process.env.STRIPE_PRICE_ULTIMATE_YEARLY ?? null,
     },
+    trialDays: 7,
   },
 };
 

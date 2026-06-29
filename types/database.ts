@@ -80,6 +80,37 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["user_languages"]["Row"]>;
         Relationships: [];
       };
+      subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id: string | null;
+          stripe_price_id: string | null;
+          tier: Database["public"]["Enums"]["subscription_tier"];
+          status: string;
+          trial_end: Timestamp | null;
+          current_period_end: Timestamp | null;
+          cancel_at_period_end: boolean;
+          coupon_id: string | null;
+          created_at: Timestamp;
+          updated_at: Timestamp;
+        };
+        Insert: {
+          user_id: string;
+          stripe_customer_id: string;
+          stripe_subscription_id?: string | null;
+          stripe_price_id?: string | null;
+          tier?: Database["public"]["Enums"]["subscription_tier"];
+          status?: string;
+          trial_end?: Timestamp | null;
+          current_period_end?: Timestamp | null;
+          cancel_at_period_end?: boolean;
+          coupon_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["subscriptions"]["Row"]>;
+        Relationships: [];
+      };
       usage_limits: {
         Row: {
           user_id: string;
