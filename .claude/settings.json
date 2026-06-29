@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install --no-audit --no-fund 2>&1)",
+      "PowerShell(npm run typecheck 2>&1)",
+      "PowerShell(npx @tailwindcss/cli -i app/globals.css -o \".\\\\.tmp-tw-out.css\" 2>&1 | Select-Object -Last 20; Write-Output \"--- output size ---\"; if \\(Test-Path \".\\\\.tmp-tw-out.css\"\\) { \\(Get-Item \".\\\\.tmp-tw-out.css\"\\).Length; Remove-Item \".\\\\.tmp-tw-out.css\" -Force })",
+      "Bash(ls \"C:/Users/Asus/.claude/projects/c--Users-Asus-Desktop-fluentra-build/memory/\" 2>/dev/null && echo \"---\" && cat \"C:/Users/Asus/.claude/projects/c--Users-Asus-Desktop-fluentra-build/memory/MEMORY.md\" 2>/dev/null || echo \"no memory yet\")",
+      "Read(//c/Users/Asus/.claude/projects/c--Users-Asus-Desktop-fluentra-build/**)",
+      "PowerShell(Write-Output \"=== errors in any NEW auth/dashboard/admin file? \\(expect none\\) ===\"; npm run typecheck 2>&1 | Select-String -Pattern \"error TS\" | Select-String -Pattern \"components/auth|app/\\\\\\(auth\\\\\\)|app/auth|app/\\\\\\(dashboard\\\\\\)|app/admin|lib/url|lib/auth|config/site\"; Write-Output \"=== remaining errors breakdown ===\"; npm run typecheck 2>&1 | Select-String -Pattern \"error TS\" | ForEach-Object { \\($_ -split '\\\\\\('\\)[0] } | Group-Object | Select-Object Count,Name; Write-Output \"=== CSS ===\"; npx @tailwindcss/cli -i app/globals.css -o \".\\\\.t.css\" 2>&1 | Select-String -Pattern \"Done|rror\"; if \\(Test-Path \".\\\\.t.css\"\\){Remove-Item \".\\\\.t.css\" -Force})",
+      "PowerShell(npx @tailwindcss/cli -i app/globals.css -o \".\\\\.t.css\" 2>&1 | Out-String; if \\(Test-Path \".\\\\.t.css\"\\) { Write-Output \\(\"CSS OK, bytes: \" + \\(Get-Item \".\\\\.t.css\"\\).Length\\); Remove-Item \".\\\\.t.css\" -Force } else { Write-Output \"CSS FAILED\" })",
+      "PowerShell(npm run dev)",
+      "PowerShell($ok=$false; for \\($i=0; $i -lt 30; $i++\\) { try { $r = Invoke-WebRequest -Uri \"http://localhost:3000\" -UseBasicParsing -TimeoutSec 3; if \\($r.StatusCode -eq 200\\) { Write-Output \"HTTP $\\($r.StatusCode\\) — server is up\"; $ok=$true; break } } catch { Start-Sleep -Milliseconds 1500 } }; if \\(-not $ok\\) { Write-Output \"not up yet\" })",
+      "PowerShell(@\\(\"/\",\"/design\",\"/login\",\"/register\",\"/forgot-password\",\"/pricing\"\\) | ForEach-Object { try { $r = Invoke-WebRequest -Uri \"http://localhost:3000$_\" -UseBasicParsing -TimeoutSec 15; \"{0,-20} {1}\" -f $_, $r.StatusCode } catch { \"{0,-20} ERROR {1}\" -f $_, $_.Exception.Response.StatusCode.value__ } })",
+      "PowerShell(Write-Output \"=== total errors ===\"; npm run typecheck 2>&1 | Select-String -Pattern \"error TS\" | Measure-Object | Select-Object -ExpandProperty Count; Write-Output \"=== errors in NEW voice files? \\(expect none\\) ===\"; npm run typecheck 2>&1 | Select-String -Pattern \"error TS\" | Select-String -Pattern \"components/voice|hooks/use-|app/\\\\\\(dashboard\\\\\\)/learn|api/voice|config/voices|config/languages|lib/voice|lib/ai/prompts\"; Write-Output \"=== full breakdown ===\"; npm run typecheck 2>&1 | Select-String -Pattern \"error TS\" | ForEach-Object { \\($_ -split '\\\\\\('\\)[0] } | Group-Object | Select-Object Count,Name)"
+    ]
+  }
+}

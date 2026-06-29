@@ -1,0 +1,295 @@
+@import "tailwindcss";
+@import "highlight.js/styles/github-dark.css";
+@plugin "tailwindcss-animate";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ════════════════════════════════════════════════════════════════
+   Fluentra design tokens — values taken directly from the brief.
+   Brand:  primary #4F46E5 · accent #7C3AED · cyan #06B6D4
+   BG:     light #FAFAFA · dark #0B0B10
+   Radius: 16 / 24 / 32 px · 8px spacing grid
+   ════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Brand */
+  --brand-primary: #4f46e5;
+  --brand-accent:  #7c3aed;
+  --brand-cyan:    #06b6d4;
+  --brand-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #06b6d4 100%);
+
+  /* shadcn semantic surface (light) */
+  --background: #fafafa;
+  --foreground: #0b0b10;
+  --card: #ffffff;
+  --card-foreground: #0b0b10;
+  --popover: #ffffff;
+  --popover-foreground: #0b0b10;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f0fb;
+  --secondary-foreground: #1e1b3a;
+  --muted: #f4f4f5;
+  --muted-foreground: #6b6b76;
+  --accent: #7c3aed;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e6e6ea;
+  --input: #e6e6ea;
+  --ring: #4f46e5;
+
+  /* Semantic state colors */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --info: #0891b2;
+  --info-foreground: #ffffff;
+
+  /* Chart palette — brand-led, distinguishable, color-blind-aware */
+  --chart-1: #4f46e5;
+  --chart-2: #7c3aed;
+  --chart-3: #06b6d4;
+  --chart-4: #f59e0b;
+  --chart-5: #ec4899;
+
+  /* Sidebar / app-shell surface (slightly off the page background) */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0b0b10;
+  --sidebar-border: #e6e6ea;
+  --sidebar-accent: #f1f0fb;
+  --sidebar-accent-foreground: #1e1b3a;
+
+  /* Elevation — soft, premium shadows (not harsh) */
+  --shadow-xs: 0 1px 2px 0 rgb(11 11 16 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(11 11 16 / 0.06), 0 1px 2px -1px rgb(11 11 16 / 0.06);
+  --shadow-md: 0 4px 12px -2px rgb(11 11 16 / 0.08), 0 2px 6px -2px rgb(11 11 16 / 0.06);
+  --shadow-lg: 0 12px 32px -8px rgb(11 11 16 / 0.12), 0 6px 14px -6px rgb(11 11 16 / 0.08);
+  --shadow-glow: 0 0 0 1px rgb(79 70 229 / 0.12), 0 8px 32px -8px rgb(124 58 237 / 0.32);
+
+  /* Radius scale — 16 / 24 / 32 */
+  --radius: 1rem;       /* 16px — cards, inputs */
+  --radius-lg: 1.5rem;  /* 24px — panels, modals */
+  --radius-xl: 2rem;    /* 32px — hero / premium surfaces */
+}
+
+.dark {
+  --background: #0b0b10;
+  --foreground: #fafafa;
+  --card: #131320;
+  --card-foreground: #fafafa;
+  --popover: #131320;
+  --popover-foreground: #fafafa;
+  --primary: #6366f1;            /* lifted for contrast on dark */
+  --primary-foreground: #0b0b10;
+  --secondary: #1c1c2b;
+  --secondary-foreground: #fafafa;
+  --muted: #1c1c2b;
+  --muted-foreground: #a1a1b5;
+  --accent: #8b5cf6;
+  --accent-foreground: #0b0b10;
+  --destructive: #ef4444;
+  --destructive-foreground: #0b0b10;
+  --border: #26263a;
+  --input: #26263a;
+  --ring: #6366f1;
+
+  --success: #22c55e;
+  --success-foreground: #052e16;
+  --warning: #f59e0b;
+  --warning-foreground: #1f1300;
+  --info: #22d3ee;
+  --info-foreground: #042f3a;
+
+  --chart-1: #818cf8;
+  --chart-2: #a78bfa;
+  --chart-3: #22d3ee;
+  --chart-4: #fbbf24;
+  --chart-5: #f472b6;
+
+  --sidebar: #0f0f1a;
+  --sidebar-foreground: #fafafa;
+  --sidebar-border: #26263a;
+  --sidebar-accent: #1c1c2b;
+  --sidebar-accent-foreground: #fafafa;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.5), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 6px 14px -6px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 0 1px rgb(99 102 241 / 0.24), 0 8px 32px -8px rgb(139 92 246 / 0.45);
+}
+
+/* Map tokens into Tailwind's theme so `bg-background`, `text-primary`,
+   `rounded-lg`, `font-display`, etc. resolve. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-cyan: var(--brand-cyan);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+  /* Elevation tokens → `shadow-sm`, `shadow-md`, … `shadow-glow` */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-glow: var(--shadow-glow);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+
+  /* Inter = body/UI, Plus Jakarta Sans = display (wire up via next/font) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), sans-serif;
+
+  /* Animation system → `animate-*` utilities. Honors reduced-motion below. */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-fade-up: fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-scale-in: scale-in 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-ring: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-gradient: gradient-pan 8s ease infinite;
+  --animate-spin-slow: spin 1.2s linear infinite;
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to { height: 0; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+  @keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgb(79 70 229 / 0.45); }
+    70% { box-shadow: 0 0 0 12px rgb(79 70 229 / 0); }
+    100% { box-shadow: 0 0 0 0 rgb(79 70 229 / 0); }
+  }
+  @keyframes gradient-pan {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+}
+
+* { border-color: var(--color-border); }
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Accessibility floor — enforced from day one, not retrofitted */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Premium surface utilities (used across marketing + dashboard) ── */
+@utility text-gradient {
+  background: var(--brand-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--brand-gradient);
+}
+
+/* Animated gradient — pair with `animate-gradient` */
+@utility bg-brand-gradient-animated {
+  background-image: var(--brand-gradient);
+  background-size: 200% 200%;
+}
+
+/* Frosted glass panel for hero cards, navbars, overlays */
+@utility surface-glass {
+  background: color-mix(in oklab, var(--card) 72%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+}
+
+/* Shimmer fill for skeleton loaders */
+@utility shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--foreground) 8%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
