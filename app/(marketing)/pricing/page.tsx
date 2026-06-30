@@ -26,13 +26,25 @@ export default function PricingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId }),
       });
-      if (res.status === 401) { router.push("/login?next=/pricing"); return; }
+      if (res.status === 401) { router.push(`/login?next=/pricing`); return; }
       const data = await res.json() as { url?: string; error?: { message: string } };
       if (data.url) window.location.href = data.url;
-      else alert(data.error?.message ?? "Something went wrong.");
+      else router.push(`/register?plan=${tier}`);
     } finally {
       setLoading(null);
     }
+  }
+
+  function handleCta(tier: string, priceId: string | null) {
+    if (tier === "free") {
+      router.push("/register");
+      return;
+    }
+    if (!priceId) {
+      router.push(`/register?plan=${tier}`);
+      return;
+    }
+    checkout(priceId, tier);
   }
 
   return (
@@ -137,8 +149,8 @@ export default function PricingPage() {
 
               {/* CTA */}
               <button
-                onClick={() => priceId ? checkout(priceId, tier) : undefined}
-                disabled={!priceId && tier !== "free" || loading === tier}
+                onClick={() => handleCta(tier, priceId)}
+                disabled={loading === tier}
                 className={cn(
                   "mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all",
                   tier === "free"
@@ -146,7 +158,6 @@ export default function PricingPage() {
                     : isPro
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                     : "bg-violet-600 text-white hover:bg-violet-700",
-                  (!priceId && tier !== "free") ? "opacity-50 cursor-not-allowed" : "",
                 )}
               >
                 {loading === tier ? (
