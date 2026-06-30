@@ -36,8 +36,8 @@ export function ChatInterface({ initialMessages }: ChatInterfaceProps) {
       nativeLanguage: nativeName,
       targetLanguage: targetName,
     },
-    onError(err) {
-      console.error("Chat error:", err);
+    onError(_err) {
+      // errors surface via the UI; suppress noisy console output in production
     },
   });
 

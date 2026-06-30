@@ -17,7 +17,7 @@ function Waveform({ reduce }: { reduce: boolean | null }) {
         <motion.span
           key={i}
           className="w-[3px] rounded-full bg-brand-gradient"
-          style={{ height: `${h * 100}%` }}
+          style={{ height: `${(h * 100).toFixed(2)}%` }}
           animate={reduce ? undefined : { scaleY: [h, h * 0.35, h * 1, h * 0.6, h] }}
           transition={
             reduce

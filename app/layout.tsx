@@ -27,6 +27,29 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   metadataBase: new URL(siteConfig.url),
+  keywords: [
+    "language learning", "AI tutor", "learn Spanish", "learn French",
+    "learn Japanese", "pronunciation practice", "voice conversation",
+    "grammar correction", "language app", "AI language learning",
+  ],
+  authors: [{ name: "Fluentra" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: siteConfig.name,
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${siteConfig.name} — ${siteConfig.tagline}`,
+    description: siteConfig.description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-snippet": -1 },
+  },
 };
 
 export const viewport: Viewport = {

@@ -133,8 +133,12 @@ export function SiteFooter() {
             {/* Language selector (UI-ready for next-intl) */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Globe className="size-4" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label={`Language: ${LOCALES.find((l) => l.code === locale)?.label}`}
+                >
+                  <Globe className="size-4" aria-hidden />
                   {LOCALES.find((l) => l.code === locale)?.label}
                 </Button>
               </DropdownMenuTrigger>
