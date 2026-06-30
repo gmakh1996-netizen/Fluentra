@@ -188,6 +188,11 @@ export function useVoiceConversation(initial?: Partial<VoiceSettings>) {
         audioUrl: URL.createObjectURL(rec.blob),
         scoring: true,
       };
+
+      // Snapshot history BEFORE the React state update so we can build the
+      // messages array immediately — React 18 batches the setter and the ref
+      // won't be updated until the next render.
+      const historySnapshot = turnsRef.current.slice();
       setTurnsSynced((prev) => [...prev, userTurn]);
 
       // Pronunciation scoring runs alongside the tutor's reply.
@@ -196,7 +201,10 @@ export function useVoiceConversation(initial?: Partial<VoiceSettings>) {
         .catch(() => patchTurn(userTurn.id, { scoring: false }));
 
       setStatus("thinking");
-      const messages = turnsRef.current.map((t) => ({ role: t.role, content: t.text }));
+      const messages = [
+        ...historySnapshot.map((t) => ({ role: t.role, content: t.text })),
+        { role: "user" as const, content: text },
+      ];
       const reply = await apiConverse({
         messages,
         mode: s.mode,
