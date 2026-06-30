@@ -10,6 +10,8 @@ export const CONVERSATION_MODES = [
   "interview",
   "pronunciation",
   "grammar",
+  "roleplay",
+  "debate",
 ] as const;
 export type ConversationMode = (typeof CONVERSATION_MODES)[number];
 

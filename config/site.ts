@@ -40,6 +40,7 @@ export const routes = {
   writing: "/learn/writing",
   listening: "/learn/listening",
   roleplay: "/learn/roleplay",
+  debate: "/learn/debate",
   progress: "/progress",
   achievements: "/achievements",
   leaderboard: "/leaderboard",

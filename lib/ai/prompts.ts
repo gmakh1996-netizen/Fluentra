@@ -16,6 +16,8 @@ const MODE_GUIDANCE: Record<ConversationMode, string> = {
   interview: "Conduct a realistic job interview and coach the learner's answers.",
   pronunciation: "Focus on sounds, stress, and rhythm. Give targeted pronunciation feedback.",
   grammar: "Prioritize correct grammar; explain rules briefly and clearly when relevant.",
+  roleplay: "Play the role specified in the scenario. Stay in character throughout. After the learner's turn, gently note one language mistake (if any) before continuing the scene.",
+  debate: "Take the opposite position from the learner and argue it confidently but fairly. After each exchange, point out one strong phrase the learner used and one suggestion to sound more persuasive.",
 };
 
 /**

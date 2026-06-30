@@ -1,6 +1,9 @@
 import "server-only";
+import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { unauthorized, forbidden } from "@/lib/errors";
 import { routes } from "@/config/site";
 import type { User } from "@supabase/supabase-js";
@@ -31,23 +34,50 @@ export async function requireAdmin(): Promise<User> {
 
 // ── Shared helpers ────────────────────────────────────────────────────
 
-/** The current user's profile row (role, tier, onboarded…), or null. */
-export async function getProfile(userId: string): Promise<Profile | null> {
-  const supabase = await createClient();
-  const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-  // Cast through unknown: the generated DB types replace the stub after db:types.
-  return (data as unknown as Profile | null) ?? null;
+/** Invalidate the server-side profile cache for a user (e.g. after tier change). */
+export function revalidateProfileCache(userId: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (revalidateTag as any)(`profile:${userId}`);
 }
 
-/** Current { user, profile } pair, or null when signed out. */
-export async function getSession(): Promise<{ user: User; profile: Profile | null } | null> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  return { user, profile: await getProfile(user.id) };
-}
+/**
+ * The current user's profile row.
+ * Two-level cache:
+ * 1. unstable_cache — persists across requests for 60s (avoids DB on every navigation)
+ * 2. React cache    — deduplicates within a single render (layout + page share one result)
+ */
+export const getProfile = cache(async (userId: string): Promise<Profile | null> => {
+  return unstable_cache(
+    async (id: string) => {
+      const admin = createAdminClient();
+      const { data } = await admin
+        .from("profiles")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      return (data as unknown as Profile | null) ?? null;
+    },
+    ["profile", userId],
+    { revalidate: 60, tags: [`profile:${userId}`] },
+  )(userId);
+});
+
+/**
+ * Current { user, profile } pair, or null when signed out.
+ * Uses getSession() (cookie/JWT — no network call) for page/layout rendering;
+ * middleware already calls getUser() on every request for security.
+ * Cached per request so multiple callers within a render share one result.
+ */
+export const getSession = cache(
+  async (): Promise<{ user: User; profile: Profile | null } | null> => {
+    const supabase = await createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user) return null;
+    return { user: session.user, profile: await getProfile(session.user.id) };
+  },
+);
 
 // ── Page/layout guards (redirect → friendly navigation) ───────────────
 

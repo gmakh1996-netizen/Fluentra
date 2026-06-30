@@ -30,17 +30,50 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
-      // ── Checkout completed: establish customer ↔ user link ──────
+      // ── Checkout completed: establish customer ↔ user link + sync tier ──
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.client_reference_id ?? session.metadata?.userId;
         const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id;
         if (!userId || !customerId) break;
 
-        await admin.from("subscriptions").upsert(
-          { user_id: userId, stripe_customer_id: customerId, status: "active" },
-          { onConflict: "user_id" },
-        );
+        // Retrieve the subscription to get tier immediately without waiting for subscription.created
+        const subscriptionId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : (session.subscription as Stripe.Subscription | null)?.id ?? null;
+
+        if (subscriptionId) {
+          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const priceId = sub.items.data[0]?.price.id ?? null;
+          const tier = (priceId ? tierFromPriceId(priceId) : null) ?? "free";
+          const couponId = sub.discount?.coupon?.id ?? null;
+
+          await admin.from("subscriptions").upsert(
+            {
+              user_id: userId,
+              stripe_customer_id: customerId,
+              stripe_subscription_id: sub.id,
+              stripe_price_id: priceId,
+              tier,
+              status: sub.status,
+              trial_end: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+              current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+              cancel_at_period_end: sub.cancel_at_period_end,
+              coupon_id: couponId,
+            },
+            { onConflict: "user_id" },
+          );
+
+          if (sub.status === "active" || sub.status === "trialing") {
+            await syncTierToProfile(userId, tier, admin);
+          }
+        } else {
+          await admin.from("subscriptions").upsert(
+            { user_id: userId, stripe_customer_id: customerId, status: "active" },
+            { onConflict: "user_id" },
+          );
+        }
         break;
       }
 

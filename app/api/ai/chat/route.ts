@@ -18,6 +18,8 @@ const bodySchema = z.object({
   level: z.enum(CEFR_LEVELS),
   nativeLanguage: z.string().min(1),
   targetLanguage: z.string().min(1),
+  scenarioHint: z.string().max(300).optional(),
+  debateHint: z.string().max(300).optional(),
 });
 
 let limiterPromise: ReturnType<typeof createRateLimiter> | null = null;
@@ -33,11 +35,13 @@ export async function POST(req: Request) {
     // Daily plan budget (free tier blocks at the 11th message).
     await consumeUsage(user.id, "ai_messages", 1);
 
-    const { messages, mode, level, nativeLanguage, targetLanguage } = bodySchema.parse(
+    const { messages, mode, level, nativeLanguage, targetLanguage, scenarioHint, debateHint } = bodySchema.parse(
       await req.json(),
     );
 
-    const system = buildTutorSystemPrompt({ nativeLanguage, targetLanguage, level, mode });
+    const extraHint = scenarioHint ?? debateHint;
+    const system = buildTutorSystemPrompt({ nativeLanguage, targetLanguage, level, mode }) +
+      (extraHint ? ` SCENE CONTEXT: ${extraHint}` : "");
     const tier = mode === "grammar" ? "premium" : "default";
 
     const result = streamText({

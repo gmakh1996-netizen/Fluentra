@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 import { requireUserPage } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, tierFromPriceId, syncTierToProfile } from "@/lib/stripe";
+import { revalidateProfileCache } from "@/lib/auth";
 import { PLANS, SOFT_UNLIMITED } from "@/config/plans";
 import { env } from "@/lib/env";
 import { routes } from "@/config/site";
@@ -136,47 +137,118 @@ const CARD_BRANDS: Record<string, { label: string; cls: string }> = {
 
 /* ── Main page ─────────────────────────────────────────────────── */
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status } = await searchParams;
   const { user, profile } = await requireUserPage();
-  const tier = profile?.subscription_tier ?? "free";
-  const plan = PLANS[tier];
   const admin = createAdminClient();
 
-  /* Subscription row */
-  const { data: sub } = await admin
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", user.id)
-    .maybeSingle();
+  // On checkout success, sync subscription from Stripe immediately (webhooks may be delayed)
+  if (status === "success" && env.STRIPE_SECRET_KEY) {
+    try {
+      const stripe = getStripe();
+      const { data: existingSub } = await admin
+        .from("subscriptions")
+        .select("stripe_customer_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-  /* Today's API-tracked usage */
+      // If no local row, search Stripe by email to recover the customer
+      let stripeCustomerId = existingSub?.stripe_customer_id ?? null;
+      if (!stripeCustomerId && user.email) {
+        const customers = await stripe.customers.search({
+          query: `email:"${user.email}"`,
+          limit: 1,
+        });
+        const found = customers.data[0];
+        if (found) stripeCustomerId = found.id;
+      }
+
+      // Ensure profile row exists (signup trigger may have missed it)
+      const { data: profileCheck } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!profileCheck) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (admin as any).from("profiles").insert({ id: user.id, subscription_tier: "free" });
+      }
+
+      if (stripeCustomerId) {
+        const stripeSubs = await stripe.subscriptions.list({
+          customer: stripeCustomerId,
+          status: "all",
+          limit: 1,
+          expand: ["data.default_payment_method"],
+        });
+        const latestSub = stripeSubs.data[0];
+        if (latestSub) {
+          const priceId = latestSub.items.data[0]?.price.id ?? null;
+          const resolvedTier = (priceId ? tierFromPriceId(priceId) : null) ?? "free";
+          const couponId = latestSub.discount?.coupon?.id ?? null;
+          await admin.from("subscriptions").upsert(
+            {
+              user_id: user.id,
+              stripe_customer_id: stripeCustomerId,
+              stripe_subscription_id: latestSub.id,
+              stripe_price_id: priceId,
+              tier: resolvedTier,
+              status: latestSub.status,
+              trial_end: latestSub.trial_end
+                ? new Date(latestSub.trial_end * 1000).toISOString()
+                : null,
+              current_period_end: new Date(latestSub.current_period_end * 1000).toISOString(),
+              cancel_at_period_end: latestSub.cancel_at_period_end,
+              coupon_id: couponId,
+            },
+            { onConflict: "user_id" },
+          );
+          if (latestSub.status === "active" || latestSub.status === "trialing") {
+            await syncTierToProfile(user.id, resolvedTier, admin);
+            revalidateProfileCache(user.id);
+          }
+        }
+      }
+    } catch {
+      /* Stripe sync failed — degrade gracefully */
+    }
+  }
+
   const today = new Date().toISOString().slice(0, 10);
-  const { data: usage } = await admin
-    .from("usage_limits")
-    .select("ai_messages_used, ai_messages_limit, voice_seconds_used, voice_seconds_limit")
-    .eq("user_id", user.id)
-    .eq("period_date", today)
-    .maybeSingle();
 
-  /* Lifetime counts from feature tables (graceful — tables may not exist yet) */
-  let lessonsCompleted = 0;
-  let vocabularyCount = 0;
-  try {
+  /* Fetch all page data in parallel */
+  const [{ data: sub }, { data: usage }, lessonResult, vocabResult] = await Promise.all([
+    admin.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle(),
+    admin
+      .from("usage_limits")
+      .select("ai_messages_used, ai_messages_limit, voice_seconds_used, voice_seconds_limit")
+      .eq("user_id", user.id)
+      .eq("period_date", today)
+      .maybeSingle(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count } = await (admin as any)
+    (admin as any)
       .from("lesson_completions")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    lessonsCompleted = count ?? 0;
-  } catch {}
-  try {
+      .eq("user_id", user.id)
+      .catch(() => ({ count: 0 })),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count } = await (admin as any)
+    (admin as any)
       .from("user_vocabulary")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    vocabularyCount = count ?? 0;
-  } catch {}
+      .eq("user_id", user.id)
+      .catch(() => ({ count: 0 })),
+  ]);
+
+  const lessonsCompleted: number = lessonResult?.count ?? 0;
+  const vocabularyCount: number = vocabResult?.count ?? 0;
+
+  /* Tier comes from subscription row (most up-to-date after sync) */
+  const tier = ((sub?.tier ?? profile?.subscription_tier ?? "free") as import("@/config/plans").Tier);
+  const plan = PLANS[tier];
 
   /* Stripe data — only if configured and customer exists */
   type Invoice = {
@@ -210,13 +282,18 @@ export default async function BillingPage() {
     try {
       const stripe = getStripe();
 
-      const [invoiceList, customer, priceData] = await Promise.all([
+      const [invoiceList, customer, priceData, subscription] = await Promise.all([
         stripe.invoices.list({ customer: sub.stripe_customer_id, limit: 12 }),
         stripe.customers.retrieve(sub.stripe_customer_id, {
           expand: ["invoice_settings.default_payment_method"],
         }),
         sub.stripe_price_id
           ? stripe.prices.retrieve(sub.stripe_price_id)
+          : Promise.resolve(null),
+        sub.stripe_subscription_id
+          ? stripe.subscriptions.retrieve(sub.stripe_subscription_id, {
+              expand: ["default_payment_method"],
+            })
           : Promise.resolve(null),
       ]);
 
@@ -234,8 +311,12 @@ export default async function BillingPage() {
       }));
 
       const cust = customer as Stripe.Customer;
-      const pm = cust.invoice_settings
+      const custPm = cust.invoice_settings
         ?.default_payment_method as Stripe.PaymentMethod | null;
+      const subPm = subscription
+        ? (subscription.default_payment_method as Stripe.PaymentMethod | null)
+        : null;
+      const pm = custPm ?? subPm;
       if (pm?.card) {
         paymentMethod = {
           brand: pm.card.brand,
