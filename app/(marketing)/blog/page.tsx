@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Clock, Tag } from "lucide-react";
+import { Clock } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal, RevealGroup } from "@/components/ui/reveal";
@@ -174,16 +174,11 @@ export default function BlogPage() {
                 </div>
                 <CardTitle className="text-2xl leading-snug">{featured.title}</CardTitle>
                 <CardDescription className="mt-2 leading-relaxed">{featured.excerpt}</CardDescription>
-                <div className="mt-5 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className="grid size-7 place-items-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
-                      {featured.authorInitials}
-                    </span>
-                    {featured.author} · {featured.date}
-                  </div>
-                  <Button variant="ghost" size="sm" className="gap-1 text-primary">
-                    Read <ArrowRight className="size-3.5" />
-                  </Button>
+                <div className="mt-5 flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="grid size-7 place-items-center rounded-full bg-primary/15 text-[11px] font-bold text-primary">
+                    {featured.authorInitials}
+                  </span>
+                  {featured.author} · {featured.date}
                 </div>
               </CardHeader>
             </div>
@@ -207,16 +202,13 @@ export default function BlogPage() {
                   <CardTitle className="text-lg leading-snug">{post.title}</CardTitle>
                   <CardDescription className="mt-1.5 leading-relaxed">{post.excerpt}</CardDescription>
                 </CardHeader>
-                <CardContent className="flex items-center justify-between pt-0">
+                <CardContent className="pt-0">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span className="grid size-6 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
                       {post.authorInitials}
                     </span>
                     {post.author} · {post.date}
                   </div>
-                  <Button variant="ghost" size="sm" className="gap-1 text-xs text-primary">
-                    Read <ArrowRight className="size-3" />
-                  </Button>
                 </CardContent>
               </Card>
             </Reveal>
