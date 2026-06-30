@@ -111,7 +111,7 @@ function SidebarContent({ onNav }: { onNav?: () => void }) {
 
 export function Sidebar() {
   return (
-    <aside className="hidden lg:flex w-60 shrink-0 flex-col fixed inset-y-0 left-0 z-30 border-r border-[var(--sidebar-border)] bg-[var(--sidebar)]">
+    <aside className="max-lg:hidden flex w-60 shrink-0 flex-col fixed inset-y-0 left-0 z-30 border-r border-[var(--sidebar-border)] bg-[var(--sidebar)]">
       <SidebarContent />
     </aside>
   );
