@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Zap, Star, Sparkles, ArrowRight } from "lucide-react";
 import { PLANS, TIER_ORDER } from "@/config/plans";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const ICONS = { free: Zap, pro: Star, ultimate: Sparkles };
 const DISPLAY_PRICES: Record<string, { monthly: number; yearly: number }> = {
@@ -29,15 +30,22 @@ export default function PricingPage() {
       if (res.status === 401) { router.push(`/login?next=/pricing`); return; }
       const data = await res.json() as { url?: string; error?: { message: string } };
       if (data.url) window.location.href = data.url;
-      else router.push(`/register?plan=${tier}`);
+      else alert(data.error?.message ?? "Something went wrong. Please try again.");
     } finally {
       setLoading(null);
     }
   }
 
-  function handleCta(tier: string, priceId: string | null) {
+  async function handleCta(tier: string, priceId: string | null) {
     if (tier === "free") {
       router.push("/register");
+      return;
+    }
+    // Check auth client-side first to avoid silent 401
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push(`/login?next=/pricing`);
       return;
     }
     if (!priceId) {
