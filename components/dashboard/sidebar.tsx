@@ -142,7 +142,7 @@ export function MobileSidebar() {
       {/* Drawer */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] transform transition-transform duration-200 ease-out lg:hidden",
+          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border shadow-lg transform transition-transform duration-200 ease-out lg:hidden",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
