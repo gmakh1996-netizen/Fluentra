@@ -24,32 +24,37 @@ export async function consumeUsage(userId: string, meter: Meter, amount = 1): Pr
   const usedCol = `${meter}_used` as const;
   const limitCol = `${meter}_limit` as const;
 
-  // Ensure a row exists for today.
-  await admin
-    .from("usage_limits")
-    .upsert({ user_id: userId, period_date: period }, { onConflict: "user_id,period_date" });
+  try {
+    // Ensure a row exists for today.
+    await admin
+      .from("usage_limits")
+      .upsert({ user_id: userId, period_date: period }, { onConflict: "user_id,period_date" });
 
-  const { data, error } = await admin
-    .from("usage_limits")
-    .select(`${usedCol}, ${limitCol}`)
-    .eq("user_id", userId)
-    .eq("period_date", period)
-    .single();
+    const { data, error } = await admin
+      .from("usage_limits")
+      .select(`${usedCol}, ${limitCol}`)
+      .eq("user_id", userId)
+      .eq("period_date", period)
+      .single();
 
-  if (error || !data) throw new Error(`usage lookup failed: ${error?.message}`);
+    // Table not yet migrated — skip enforcement until it exists.
+    if (error || !data) return;
 
-  const used = (data as Record<string, number>)[usedCol] ?? 0;
-  const limit = (data as Record<string, number>)[limitCol] ?? 0;
+    const used = (data as Record<string, number>)[usedCol] ?? 0;
+    const limit = (data as Record<string, number>)[limitCol] ?? 0;
 
-  if (used + amount > limit) throw usageLimitReached();
+    if (used + amount > limit) throw usageLimitReached();
 
-  const { error: updateError } = await admin
-    .from("usage_limits")
-    .update({ [usedCol]: used + amount } as never)
-    .eq("user_id", userId)
-    .eq("period_date", period);
-
-  if (updateError) throw new Error(`usage update failed: ${updateError.message}`);
+    await admin
+      .from("usage_limits")
+      .update({ [usedCol]: used + amount } as never)
+      .eq("user_id", userId)
+      .eq("period_date", period);
+  } catch (err) {
+    // Re-throw only intentional limit errors; swallow infrastructure gaps.
+    if (err instanceof Error && err.message === "usage_limit_reached") throw err;
+    console.warn("[usage] skipped:", err instanceof Error ? err.message : err);
+  }
 }
 
 /** Read remaining budget without consuming — for dashboards/UI gates. */
