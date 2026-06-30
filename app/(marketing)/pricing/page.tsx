@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Check, Zap, Star, Sparkles, ArrowRight } from "lucide-react";
 import { PLANS, TIER_ORDER } from "@/config/plans";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 
 const ICONS = { free: Zap, pro: Star, ultimate: Sparkles };
 const DISPLAY_PRICES: Record<string, { monthly: number; yearly: number }> = {
@@ -36,16 +35,9 @@ export default function PricingPage() {
     }
   }
 
-  async function handleCta(tier: string, priceId: string | null) {
+  function handleCta(tier: string, priceId: string | null) {
     if (tier === "free") {
       router.push("/register");
-      return;
-    }
-    // Check auth client-side first to avoid silent 401
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      router.push(`/login?next=/pricing`);
       return;
     }
     if (!priceId) {
