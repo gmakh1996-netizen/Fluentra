@@ -1,50 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Zap, Star, Sparkles, ArrowRight } from "lucide-react";
 import { PLANS, TIER_ORDER } from "@/config/plans";
 import { cn } from "@/lib/utils";
+import { startCheckout } from "./actions";
 
 const ICONS = { free: Zap, pro: Star, ultimate: Sparkles };
 const DISPLAY_PRICES: Record<string, { monthly: number; yearly: number }> = {
   free:     { monthly: 0,     yearly: 0 },
-  pro:      { monthly: 7.99,  yearly: 3.99 },  // $47.99/yr billed annually, save 50%
-  ultimate: { monthly: 12.99, yearly: 6.50 },  // $77.99/yr billed annually, save 50%
+  pro:      { monthly: 7.99,  yearly: 3.99 },
+  ultimate: { monthly: 12.99, yearly: 6.50 },
 };
 
 export default function PricingPage() {
   const router = useRouter();
   const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
-  const [loading, setLoading] = useState<string | null>(null);
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
-  async function checkout(priceId: string, tier: string) {
-    setLoading(tier);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
-      });
-      if (res.status === 401) { router.push(`/login?next=/pricing`); return; }
-      const data = await res.json() as { url?: string; error?: { message: string } };
-      if (data.url) window.location.href = data.url;
-      else alert(data.error?.message ?? "Something went wrong. Please try again.");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  function handleCta(tier: string, priceId: string | null) {
+  function handleCta(tier: string) {
     if (tier === "free") {
       router.push("/register");
       return;
     }
-    if (!priceId) {
-      router.push(`/register?plan=${tier}`);
-      return;
-    }
-    checkout(priceId, tier);
+    setLoadingTier(tier);
+    startTransition(async () => {
+      try {
+        await startCheckout(tier as "pro" | "ultimate", interval);
+      } catch {
+        // redirect() throws internally — this is expected
+      } finally {
+        setLoadingTier(null);
+      }
+    });
   }
 
   return (
@@ -88,12 +78,11 @@ export default function PricingPage() {
         {TIER_ORDER.map((tier) => {
           const plan = PLANS[tier];
           const Icon = ICONS[tier];
-          const priceId = interval === "yearly" ? plan.priceIds.yearly : plan.priceIds.monthly;
           const isPro = tier === "pro";
           const isUltimate = tier === "ultimate";
-
           const prices = DISPLAY_PRICES[tier] ?? { monthly: 0, yearly: 0 };
           const display = interval === "yearly" ? prices.yearly : prices.monthly;
+          const isLoading = loadingTier === tier;
 
           return (
             <div
@@ -149,10 +138,10 @@ export default function PricingPage() {
 
               {/* CTA */}
               <button
-                onClick={() => handleCta(tier, priceId)}
-                disabled={loading === tier}
+                onClick={() => handleCta(tier)}
+                disabled={isLoading}
                 className={cn(
-                  "mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all",
+                  "mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed",
                   tier === "free"
                     ? "border border-border hover:bg-muted"
                     : isPro
@@ -160,7 +149,7 @@ export default function PricingPage() {
                     : "bg-violet-600 text-white hover:bg-violet-700",
                 )}
               >
-                {loading === tier ? (
+                {isLoading ? (
                   <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                 ) : tier === "free" ? (
                   <>Get started free</>
