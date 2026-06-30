@@ -68,6 +68,17 @@ export function RegisterForm() {
             Use 8+ characters with a mix of letters and numbers.
           </p>
         </div>
+        <div className="grid gap-2">
+          <Label htmlFor="confirmPassword">Confirm password</Label>
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            placeholder="Repeat your password"
+          />
+        </div>
 
         <div className="flex items-start gap-2.5">
           <input

@@ -65,12 +65,18 @@ export async function signUpWithPassword(
       displayName: z.string().trim().min(1, "Enter your name.").max(80),
       email: emailSchema,
       password: passwordSchema,
+      confirmPassword: z.string().min(1, "Please confirm your password."),
       terms: z.literal("on", { errorMap: () => ({ message: "Please accept the terms to continue." }) }),
+    })
+    .refine((d) => d.password === d.confirmPassword, {
+      message: "Passwords don't match.",
+      path: ["confirmPassword"],
     })
     .safeParse({
       displayName: formData.get("displayName"),
       email: formData.get("email"),
       password: formData.get("password"),
+      confirmPassword: formData.get("confirmPassword"),
       terms: formData.get("terms"),
     });
 
@@ -96,6 +102,16 @@ export async function signUpWithPassword(
   });
 
   if (error) return { error: friendly(error), fields: { email: parsed.data.email } };
+
+  // Supabase returns an empty identities array when the email is already registered
+  // instead of an error (to prevent email enumeration at the provider level).
+  // We surface it as a friendly duplicate-account message.
+  if (data.user?.identities?.length === 0) {
+    return {
+      error: "An account with this email already exists. Try signing in instead.",
+      fields: { email: parsed.data.email },
+    };
+  }
 
   // Email confirmation required → no session yet. Send to the "check inbox" page.
   if (data.user && !data.session) {
