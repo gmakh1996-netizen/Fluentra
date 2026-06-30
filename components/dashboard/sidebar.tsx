@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   Home, MessageCircle, Mic, BookOpen, Layers, SpellCheck,
   AudioLines, PenLine, Headphones, TrendingUp, Award,
@@ -119,10 +120,13 @@ export function Sidebar() {
 
 export function MobileSidebar() {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   return (
     <>
-      {/* Hamburger button */}
+      {/* Hamburger button — stays inside the header */}
       <button
         onClick={() => setOpen(true)}
         className="lg:hidden flex items-center justify-center size-9 rounded-xl hover:bg-muted transition-colors"
@@ -131,29 +135,36 @@ export function MobileSidebar() {
         <Menu className="size-5" />
       </button>
 
-      {/* Overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      )}
+      {/* Portal to body so header's backdrop-filter doesn't confine fixed positioning */}
+      {mounted && createPortal(
+        <>
+          {/* Overlay */}
+          <div
+            className={cn(
+              "fixed inset-0 z-40 bg-black/50 transition-opacity duration-200 lg:hidden",
+              open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+            )}
+            onClick={() => setOpen(false)}
+          />
 
-      {/* Drawer */}
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border shadow-lg transform transition-transform duration-200 ease-out lg:hidden",
-          open ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
-        <button
-          onClick={() => setOpen(false)}
-          className="absolute right-3 top-4 flex size-8 items-center justify-center rounded-lg hover:bg-muted transition-colors"
-        >
-          <X className="size-4" />
-        </button>
-        <SidebarContent onNav={() => setOpen(false)} />
-      </div>
+          {/* Drawer */}
+          <div
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 w-72 bg-sidebar border-r border-sidebar-border shadow-xl transform transition-transform duration-200 ease-out lg:hidden",
+              open ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute right-3 top-4 flex size-8 items-center justify-center rounded-lg hover:bg-muted transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+            <SidebarContent onNav={() => setOpen(false)} />
+          </div>
+        </>,
+        document.body,
+      )}
     </>
   );
 }
