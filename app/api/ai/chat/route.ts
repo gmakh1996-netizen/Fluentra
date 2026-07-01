@@ -8,8 +8,10 @@ import { consumeUsage } from "@/lib/usage";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toErrorResponse, ApiError } from "@/lib/errors";
+import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const bodySchema = z.object({
   conversationId: z.string().uuid().optional(),
@@ -25,15 +27,28 @@ const bodySchema = z.object({
 let limiterPromise: ReturnType<typeof createRateLimiter> | null = null;
 const limiter = () => (limiterPromise ??= createRateLimiter(30, 60)); // 30 req/min/user
 
+async function getUserFromRequest(req: Request) {
+  // Try Bearer token first (mobile app)
+  const authHeader = req.headers.get("authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) return user;
+  }
+  // Fall back to cookie session (web app)
+  return requireUser();
+}
+
 export async function POST(req: Request) {
   try {
-    const user = await requireUser();
+    const user = await getUserFromRequest(req);
 
     const rl = await (await limiter())(user.id);
     if (!rl.success) throw new ApiError("rate_limited", "Slow down a moment.", 429);
-
-    // Daily plan budget (free tier blocks at the 11th message).
-    await consumeUsage(user.id, "ai_messages", 1);
 
     const { messages, mode, level, nativeLanguage, targetLanguage, scenarioHint, debateHint } = bodySchema.parse(
       await req.json(),
