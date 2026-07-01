@@ -18,13 +18,19 @@ const schema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 
   // AI provider selection
-  AI_PROVIDER: z.enum(["gemini", "openai"]).default("gemini"),
+  AI_PROVIDER: z.enum(["gemini", "openai"]).default("openai"),
   OPENAI_API_KEY: z.string().optional(),
-  OPENAI_MODEL_DEFAULT: z.string().default("gpt-4o-mini"),
-  OPENAI_MODEL_PREMIUM: z.string().default("gpt-4o"),
+  OPENAI_MODEL_DEFAULT: z.string().default("gpt-4.1-mini"),
+  OPENAI_MODEL_PREMIUM: z.string().default("gpt-4.1"),
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   GEMINI_MODEL_DEFAULT: z.string().default("gemini-2.0-flash"),
   GEMINI_MODEL_PREMIUM: z.string().default("gemini-2.5-pro"),
+
+  // Voice provider: elevenlabs (turn-based) or gemini (Live WebSocket)
+  NEXT_PUBLIC_VOICE_PROVIDER: z.enum(["elevenlabs", "gemini"]).default("gemini"),
+  // Exposed to the browser for the Gemini Live WebSocket session.
+  // Restrict this key to your domain in Google Cloud Console.
+  NEXT_PUBLIC_GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
 
   // Voice / pronunciation — optional
   ELEVENLABS_API_KEY: z.string().optional(),
