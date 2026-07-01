@@ -4,11 +4,9 @@ import { getModel } from "@/lib/ai";
 import { buildTutorSystemPrompt } from "@/lib/ai/prompts";
 import { chatMessageSchema, CONVERSATION_MODES, CEFR_LEVELS } from "@/lib/ai/types";
 import { requireUser } from "@/lib/auth";
-import { consumeUsage } from "@/lib/usage";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { toErrorResponse, ApiError } from "@/lib/errors";
-import { createClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -28,18 +26,14 @@ let limiterPromise: ReturnType<typeof createRateLimiter> | null = null;
 const limiter = () => (limiterPromise ??= createRateLimiter(30, 60)); // 30 req/min/user
 
 async function getUserFromRequest(req: Request) {
-  // Try Bearer token first (mobile app)
+  // Bearer token (mobile app) — verified with service-role admin client
   const authHeader = req.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7);
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
-    const { data: { user } } = await supabase.auth.getUser(token);
+    const { data: { user } } = await createAdminClient().auth.getUser(token);
     if (user) return user;
   }
-  // Fall back to cookie session (web app)
+  // Cookie session fallback (web app)
   return requireUser();
 }
 
